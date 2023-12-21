@@ -3,6 +3,8 @@ const axios = require('axios');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -13,8 +15,13 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-mongoose.connection.on('error', error => console.error('MongoDB connection error:', error));
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
+mongoose.connection.on('error', error =>
+  console.error('MongoDB connection error:', error)
+);
 mongoose.connection.once('open', () => console.log('MongoDB connected.'));
 
 const conversationSchema = new mongoose.Schema({
@@ -24,6 +31,29 @@ const conversationSchema = new mongoose.Schema({
 });
 
 const Conversation = mongoose.model('Conversation', conversationSchema);
+
+// Load the bad words list from the JSON file
+let badWords = [];
+const badWordsFilePath = path.join(__dirname, 'bad_words.json');
+
+// Synchronously read the file to ensure it is loaded before the server starts
+try {
+  const data = fs.readFileSync(badWordsFilePath, 'utf8');
+  badWords = JSON.parse(data);
+} catch (err) {
+  console.error('Error loading bad words list:', err);
+  process.exit(1); // Stop the process if the bad words list can't be loaded
+}
+
+// Censoring function using the loaded bad words list
+function censorBadWords(text) {
+  let censoredText = text;
+  badWords.forEach(badWord => {
+    const regex = new RegExp(`\\b${badWord}\\b`, 'gi');
+    censoredText = censoredText.replace(regex, match => match.charAt(0) + '*'.repeat(match.length - 1));
+  });
+  return censoredText;
+}
 
 app.post('/api/chat', async (req, res) => {
   const { prompt } = req.body;
@@ -37,15 +67,22 @@ app.post('/api/chat', async (req, res) => {
   try {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: "gpt-3.5-turbo",
-      messages: [{ "role": "system", "content": context }, {"role": "user", "content": prompt}],
+      messages: [{ "role": "system", "content": context }, { "role": "user", "content": prompt }],
     }, { headers });
 
-    const message = response.data.choices[0].message.content;
+    // Get the uncensored message from OpenAI
+    const uncensoredMessage = response.data.choices[0].message.content;
 
-    const newConversation = new Conversation({ question: prompt, answer: message });
+    // Censor the prompt and the OpenAI message before saving to the database
+    const censoredQuestion = censorBadWords(prompt);
+    const censoredAnswer = censorBadWords(uncensoredMessage);
+
+    // Save the censored question and answer to the database
+    const newConversation = new Conversation({ question: censoredQuestion, answer: censoredAnswer });
     await newConversation.save();
 
-    res.json({ message });
+    // Send the uncensored OpenAI message to the user
+    res.json({ message: uncensoredMessage });
   } catch (error) {
     console.error('OpenAI API error:', error.response?.data || error.message);
     res.status(500).send('Error processing your request');
