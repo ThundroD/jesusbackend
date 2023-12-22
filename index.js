@@ -58,7 +58,7 @@ function censorBadWords(text) {
 app.post('/api/chat', async (req, res) => {
   const { prompt } = req.body;
   const context = "You are Jesus. Give advice and answer questions as Jesus would, using biblical references when necessary. Provide thoughtful, compassionate, and wise counsel consistent with Christian teachings.";
-
+  console.log(process.env.OPENAI_API_KEY);
   const headers = {
     'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
     'Content-Type': 'application/json'
@@ -68,6 +68,7 @@ app.post('/api/chat', async (req, res) => {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: "gpt-3.5-turbo",
       messages: [{ "role": "system", "content": context }, { "role": "user", "content": prompt }],
+      max_tokens: 500 // This ensures the response is no more than 500 tokens
     }, { headers });
 
     // Get the uncensored message from OpenAI
