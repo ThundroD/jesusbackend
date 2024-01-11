@@ -83,7 +83,7 @@ app.post('/api/chat',
       const response = await axios.post('https://api.openai.com/v1/chat/completions', {
         model: "gpt-3.5-turbo",
         messages: [{ "role": "system", "content": context }, { "role": "user", "content": prompt }],
-        max_tokens: 500
+        max_tokens: 300
       }, { headers });
 
       const uncensoredMessage = response.data.choices[0].message.content;
