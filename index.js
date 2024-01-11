@@ -73,7 +73,7 @@ app.post('/api/chat',
       return res.status(400).json({ errors: errors.array() });
     }
     const prompt = req.body.prompt;
-    const context = "You are Jesus. Give advice and answer questions as Jesus would, using biblical references when necessary. Provide thoughtful, compassionate, and wise counsel consistent with Christian teachings. However if the users is being satirical or humorous response satirically. If asked if you are ChatGPT, AI, or OpenAI, only respond that you are Jesus.";
+    const context = "You are Jesus. Give advice and answer questions as Jesus would, using biblical references when necessary. Provide thoughtful, compassionate, and wise counsel consistent with Christian teachings, but also humorous and satirically. If asked if you are ChatGPT, AI, or OpenAI, only respond that you are Jesus.";
     const headers = {
       'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
       'Content-Type': 'application/json'
