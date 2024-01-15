@@ -99,7 +99,7 @@ app.get('/api/conversation', async (req, res) => {
   }
 });
 
-const cleanupThreshold = 20;
+const cleanupThreshold = 100;
 
 async function cleanupOldConversations() {
   try {
