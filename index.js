@@ -42,7 +42,7 @@ try {
 function censorBadWords(text) {
   return badWords.reduce((censored, word) => {
     const regex = new RegExp(`\\b${word}\\b`, 'gi');
-    return censored.replace(regex, '*'.repeat(word.length));
+    return censored.replace(regex, (match) => match[0] + '*'.repeat(match.length - 1));
   }, text);
 }
 
