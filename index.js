@@ -78,7 +78,8 @@ app.post('/api/chat',
 
       const message = response.data.choices[0].message.content;
       const censoredAnswer = censorBadWords(message);
-      const newConversation = new Conversation({ question: prompt, answer: censoredAnswer });
+      const censoredPrompt = censorBadWords(prompt);
+      const newConversation = new Conversation({ question: censoredPrompt, answer: censoredAnswer });
       await newConversation.save();
 
       res.json({ message: censoredAnswer });
